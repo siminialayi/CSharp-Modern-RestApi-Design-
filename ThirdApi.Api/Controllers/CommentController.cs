@@ -7,11 +7,19 @@ using System.Security.Claims;
 namespace Blog.Api.Controllers;
 
 /// <summary>
-/// Controller for managing comments, providing a fully asynchronous RESTful API interface.
+/// API surface for managing <see cref="Entities.Comment"/> resources.
 /// </summary>
 /// <remarks>
-/// Utilizes the async/await pattern to ensure server scalability and efficient thread utilization 
-/// when performing I/O operations.
+/// RESPONSIBILITY BOUNDARY:
+/// - Translates HTTP concepts (routes, status codes) to service layer calls.
+/// - Avoids embedding business logic; delegates to <see cref="ICommentService"/>.
+/// - Returns standardized responses; error translation handled by global exception middleware.
+/// DESIGN CHOICES:
+/// - Asynchronous endpoints to maximize scalability for I/O-bound EF Core operations.
+/// - CreatedAtAction used for POST to align with REST resource creation semantics.
+/// EXTENSION GUIDELINES:
+/// - Introduce authorization attributes (e.g., [Authorize]) when authentication is implemented.
+/// - Add pagination to GET collection when volume grows beyond practical limits.
 /// </remarks>
 /// <param name="commentService">The injected asynchronous comment business logic service.</param>
 [Route("api/[controller]")]
@@ -19,26 +27,24 @@ namespace Blog.Api.Controllers;
 public class CommentController(ICommentService commentService) : ControllerBase
     {
     /// <summary>
-    /// Retrieves a list of all comments asynchronously, returning DTOs.
+    /// Retrieves all comments.
     /// </summary>
-    /// <returns>An asynchronous action result containing a list of comments (200 OK).</returns>
+    /// <returns>200 OK with collection payload.</returns>
     [HttpGet]
     public async Task<IActionResult> Get()
         {
-        // T
         var comments = await commentService.GetCommentsAsync();
         return Ok(comments);
         }
 
     /// <summary>
-    /// Retrieves a specific comment by its unique identifier asynchronously, returning a DTO.
+    /// Retrieves a specific comment by identifier.
     /// </summary>
-    /// <param name="id">The unique identifier of the comment.</param>
-    /// <returns>An asynchronous action result containing the comment (200 OK) or 404 Not Found.</returns>
+    /// <param name="id">Comment identifier.</param>
+    /// <returns>200 OK with resource OR 404 if not found.</returns>
     [HttpGet("{id}")]
     public async Task<IActionResult> Get(Guid id)
         {
-        // The service now returns a CommentResponseDto
         var comment = await commentService.GetByIdAsync(id);
         if (comment == null)
             {
@@ -48,32 +54,28 @@ public class CommentController(ICommentService commentService) : ControllerBase
         return Ok(comment);
         }
 
-    // [REMAINDER OF METHODS (Post, Put, Delete) REMAIN UNCHANGED]
-
     /// <summary>
-    /// Creates a new comment asynchronously.
+    /// Creates a new comment.
     /// </summary>
-    /// <param name="request">The data transfer object containing the comment details.</param>
-    /// <returns>An asynchronous action result indicating successful creation (201 Created).</returns>
+    /// <param name="request">Incoming request payload.</param>
+    /// <returns>201 Created with location header reference.</returns>
     [HttpPost]
     public async Task<IActionResult> Post(CommentRequestDto request)
         {
-        // In a real JWT + Role-based system, Author is extracted from the authenticated user's claims.
-        // Using a placeholder for demonstration.
-        var author = User.FindFirstValue(ClaimTypes.Name) ?? "Anonymous/System User";
+        var author = User.FindFirstValue(ClaimTypes.Name) ?? "Anonymous/System User"; // Placeholder until auth added
 
         await commentService.AddAsync(request, author);
 
-        // RESTful best practice for POST: 201 Created.
-        return CreatedAtAction(nameof(Get), new { id = Guid.Empty /* Placeholder for the actual ID */ }, "Comment added successfully");
+        // NOTE: The created resource ID would be returned from service in a richer implementation.
+        return CreatedAtAction(nameof(Get), new { id = Guid.Empty /* Replace with actual ID when returned */ }, "Comment added successfully");
         }
 
     /// <summary>
-    /// Updates an existing comment asynchronously.
+    /// Updates an existing comment.
     /// </summary>
-    /// <param name="id">The unique identifier of the comment to update.</param>
-    /// <param name="request">The data transfer object containing the updated comment details.</param>
-    /// <returns>An asynchronous action result indicating success (200 OK) or 404 Not Found.</returns>
+    /// <param name="id">Comment identifier.</param>
+    /// <param name="request">Updated values payload.</param>
+    /// <returns>200 OK if updated OR 404 when not found.</returns>
     [HttpPut("{id}")]
     public async Task<IActionResult> Put(Guid id, CommentRequestDto request)
         {
@@ -87,10 +89,10 @@ public class CommentController(ICommentService commentService) : ControllerBase
         }
 
     /// <summary>
-    /// Deletes a comment by its unique identifier asynchronously.
+    /// Deletes a comment permanently.
     /// </summary>
-    /// <param name="id">The unique identifier of the comment to delete.</param>
-    /// <returns>An asynchronous action result indicating success (204 No Content).</returns>
+    /// <param name="id">Comment identifier.</param>
+    /// <returns>204 No Content when deletion succeeds OR 404 if target absent.</returns>
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
         {
@@ -100,7 +102,6 @@ public class CommentController(ICommentService commentService) : ControllerBase
             return NotFound($"Comment with id: {id} not found");
             }
 
-        // Standard RESTful response for successful DELETE.
         return NoContent();
         }
     }
