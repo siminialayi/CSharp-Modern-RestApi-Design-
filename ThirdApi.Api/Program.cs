@@ -1,5 +1,5 @@
 using Blog.Api.Configurations.Mapping;
-using Blog.Api.Middleware;
+using Blog.Api.ExceptionHandling;
 using Blog.Api.Models.Validators;
 using Blog.Api.Persistence;
 using Blog.Api.Persistence.Repository.CommentRepo; // New
@@ -53,7 +53,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<CommentRequestDtoValidator>
 // Mapster: register configuration via IRegister implementations (MapsterConfig) discovered automatically.
 builder.Services.AddMapster();    // <--- REGISTER MAPSTER SERVICES
 builder.Services.AddProblemDetails(); // Optional: Add ProblemDetails middleware for better error responses
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>(); // Register the global exception handler middleware
+builder.Services.AddExceptionHandlingServices(); // Register the custom exception handling services
 
 var app = builder.Build();
 
@@ -62,7 +62,7 @@ var app = builder.Build();
 // ----------------------------------------------------------------------
 // 5. HTTP Request Pipeline Configuration
 // ----------------------------------------------------------------------
-app.UseExceptionHandler(); // Use the global exception handler middleware
+app.UseCustomExceptionHandler(builder.Environment); // Use the custom exception handling middleware
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

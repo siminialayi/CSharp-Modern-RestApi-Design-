@@ -15,10 +15,10 @@ public class CommentResponseDto
     public Guid PostId { get; set; }
 
     // XAML Comment: The author's name of the Comment.
-    public string Author { get; set; } = string.Empty;
+    public string Author { get; set; }
 
     // XAML Comment: The content of the Comment.
-    public string Content { get; set; } = string.Empty;
+    public string Content { get; set; }
 
     // XAML Comment: Timestamp of when the Comment was created.
     public DateTime CreatedAt { get; set; }

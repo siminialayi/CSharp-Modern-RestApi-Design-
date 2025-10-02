@@ -20,6 +20,7 @@ public class CommentRequestDtoValidator : AbstractValidator<CommentRequestDto>
         // Professional: Requiring Content and enforcing a minimum/maximum length for business rules.
         RuleFor(x => x.Content)
             .NotEmpty()
+            .Must(name => !string.IsNullOrWhiteSpace(name?.Trim()))
             .WithMessage("Comment content is required.")
             .MinimumLength(5)
             .WithMessage("Comment content too short.")
