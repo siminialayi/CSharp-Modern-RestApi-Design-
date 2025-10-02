@@ -8,7 +8,7 @@ public class CommentRequestDto
     /// <summary>
     /// Gets or sets the content of the comment.
     /// </summary>
-    public string Content { get; set; } = string.Empty;
+    public string Content { get; set; }
 
     /// <summary>
     /// Gets or sets the unique identifier of the Post the comment belongs to.
